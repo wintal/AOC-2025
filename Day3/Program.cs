@@ -28,16 +28,39 @@ class Program
 
         foreach (var line in lines)
         {
-            for (int i = 0; i < line.Length - 8; i++)
+            int bestFirst = 0;
+            int bestIndex = 0;
+            for (int i = 0; i < line.Length - 1; i++)
             {
-                var match = Regex.Match(line[i..], "^mul\\((\\d{1,3}),(\\d{1,3})\\)");
-                if (match.Success)
+                int thisI = line[i] - '0';
+                if (thisI > bestFirst)
                 {
-                    int first = int.Parse(match.Groups[1].Value);
-                    int second = int.Parse(match.Groups[2].Value);
-                    result += first * second;
+                    bestFirst = thisI;
+                    bestIndex = i;
+                }
+
+                if (bestFirst == 9)
+                {
+                    break;
                 }
             }
+
+            int bestSecond = 0;
+            for (int i = bestIndex + 1; i < line.Length; i++)
+            {
+                int thisI = line[i] - '0';
+                if (thisI > bestSecond)
+                {
+                    bestSecond = thisI;
+                }
+
+                if (bestSecond == 9)
+                {
+                    break;
+                }
+            }
+
+            result = result + bestFirst * 10 + bestSecond;
         }
 
         System.Console.WriteLine($"Result {inputFile} is {result}");
@@ -51,35 +74,41 @@ class Program
             return;
         }
 
-        int result = 0;
+        long result = 0;
 
-        bool doIt = true;
         foreach (var line in lines)
         {
-            for (int i = 0; i < line.Length - 7; i++)
+            var best = new int[12];
+
+            int lastIndex = 0;
+            for (int digit = 0; digit < 12; digit++)
             {
-                if (line[i..].StartsWith("do()"))
+                int bestDigit = 0;
+                for (int i = lastIndex; i < line.Length - (11 - digit); i++)
                 {
-                    doIt = true;
-                }
-                else if (line[i..].StartsWith("don't()"))
-                {
-                    doIt = false;
-                }
-                else 
-                {
-                    var match = Regex.Match(line[i..], "^mul\\((\\d{1,3}),(\\d{1,3})\\)");
-                    if (match.Success)
+                    int thisI = line[i] - '0';
+                    if (thisI > bestDigit)
                     {
-                        if (doIt)
-                        {
-                            int first = int.Parse(match.Groups[1].Value);
-                            int second = int.Parse(match.Groups[2].Value);
-                            result += first * second;
-                        }
+                        bestDigit = thisI;
+                        lastIndex = i + 1;
+                        best[digit] = thisI;
+                    }
+
+                    if (bestDigit == 9)
+                    {
+                        break;
                     }
                 }
             }
+
+            long total = 0;
+            for (int digit = 0; digit < 12; digit++)
+            {
+                total = total * 10 + best[digit];
+            }
+
+            result = result + total;
+            
         }
 
         System.Console.WriteLine($"Result {inputFile} is {result}");
