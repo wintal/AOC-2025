@@ -1,4 +1,6 @@
-﻿namespace Day4;
+﻿using System.Text.RegularExpressions;
+
+namespace Day3;
 
 class Program
 {
@@ -13,82 +15,136 @@ class Program
         RunPart2(Input);
     }
 
-    static int Xmases(List<char[]> input, int x, int y, char[] remainingLetters, int xInx, int yInc)
-    {
-        if (y < 0 || y >= input.Count) return 0;
-        if (x < 0 || x >= input[y].Length) return 0;
-        if (input[y][x] == remainingLetters[0])
-        {
-            if (remainingLetters.Length == 1)
-            {
-                return 1;
-            }
-
-            var letters = remainingLetters[1..];
-            return Xmases(input, x + xInx, y + yInc, letters, xInx, yInc);
-        }
-
-        return 0;
-    }
 
     static void RunPart1(string inputFile)
     {
+        var lines = System.IO.File.ReadAllLines(inputFile);
+        if (!lines.Any())
+        {
+            return;
+        }
+
         int result = 0;
 
-        var lines = System.IO.File.ReadAllLines(inputFile).Select(line => line.ToArray()).ToList();
-        for (var y = 0; y < lines.Count; y++)
+        bool[][] rolls = new bool[lines.Length][];
+        
+        int xMax = lines[0].Length;
+        int yMax = lines.Length;
+        for (int lineIdx = 0; lineIdx < lines.Length; lineIdx++)
         {
-            for (var x = 0; x < lines[0].Length; x++)
+            rolls[lineIdx] = new bool[lines[lineIdx].Length];
+            for (int x = 0; x < lines[lineIdx].Length; x++)
             {
-                var letters = "XMAS".ToArray();
-                result += Xmases(lines, x, y, letters, -1, -1)
-                          + Xmases(lines, x, y, letters, -1, 0)
-                          + Xmases(lines, x, y, letters, -1, +1)
-                          + Xmases(lines, x, y, letters, 0, -1)
-                          + Xmases(lines, x, y, letters, 0, +1)
-                          + Xmases(lines, x, y, letters, 1, -1)
-                          + Xmases(lines, x, y, letters, 1, 0)
-                          + Xmases(lines, x, y, letters, 1, 1);
+                rolls[lineIdx][x] = lines[lineIdx][x] == '@';
             }
         }
+
+        for (int x = 0; x < xMax; x++)
+        {
+            for (int y = 0; y < yMax; y++)
+            {
+
+                if (rolls[y][x])
+                {
+                    int ContainsRoll(int x, int y)
+                    {
+                        if (x < 0 || y < 0 || x >= xMax || y >= yMax)
+                        {
+                            return 0;
+                        }
+                        return rolls[y][x] ? 1 : 0;
+                    }
+                    int count = 0;
+                    count += ContainsRoll(x - 1, y - 1);
+                    count += ContainsRoll(x - 1, y );
+                    count += ContainsRoll(x - 1, y + 1);
+                    count += ContainsRoll(x , y - 1);
+                    count += ContainsRoll(x , y + 1);
+                    count += ContainsRoll(x + 1, y - 1);
+                    count += ContainsRoll(x + 1, y );
+                    count += ContainsRoll(x + 1, y + 1);
+                    if (count < 4)
+                    {
+                        result++;
+                    }
+                }
+            }
+        }
+
+       
 
         System.Console.WriteLine($"Result {inputFile} is {result}");
     }
 
     static void RunPart2(string inputFile)
     {
+        var lines = System.IO.File.ReadAllLines(inputFile);
+        if (!lines.Any())
+        {
+            return;
+        }
+
         int result = 0;
 
-        var lines = System.IO.File.ReadAllLines(inputFile).Select(line => line.ToArray()).ToList();
-        for (var y = 1; y < lines.Count - 1; y++)
+        bool[][] rolls = new bool[lines.Length][];
+        
+        int xMax = lines[0].Length;
+        int yMax = lines.Length;
+        for (int lineIdx = 0; lineIdx < lines.Length; lineIdx++)
         {
-            for (var x = 1; x < lines[0].Length - 1; x++)
+            rolls[lineIdx] = new bool[lines[lineIdx].Length];
+            for (int x = 0; x < lines[lineIdx].Length; x++)
             {
-                if (lines[y][x] == 'A' && lines[y - 1][x - 1] == 'M' && lines[y + 1][x - 1] == 'M' &&
-                    lines[y - 1][x + 1] == 'S' && lines[y + 1][x + 1] == 'S')
-                {
-                    result++;
-                }
-
-                if (lines[y][x] == 'A' && lines[y - 1][x - 1] == 'S' && lines[y + 1][x - 1] == 'S' &&
-                    lines[y - 1][x + 1] == 'M' && lines[y + 1][x + 1] == 'M')
-                {
-                    result++;
-                }
-
-                if (lines[y][x] == 'A' && lines[y - 1][x - 1] == 'S' && lines[y + 1][x - 1] == 'M' &&
-                    lines[y - 1][x + 1] == 'S' && lines[y + 1][x + 1] == 'M')
-                {
-                    result++;
-                }
-
-                if (lines[y][x] == 'A' && lines[y - 1][x - 1] == 'M' && lines[y + 1][x - 1] == 'S' &&
-                    lines[y - 1][x + 1] == 'M' && lines[y + 1][x + 1] == 'S')
-                {
-                    result++;
-                }
+                rolls[lineIdx][x] = lines[lineIdx][x] == '@';
             }
         }
+
+        int totalRemoved;
+        do
+        {
+            totalRemoved = 0;
+            HashSet<(int, int)> toRemove = new HashSet<(int, int)>();
+            for (int x = 0; x < xMax; x++)
+            {
+                for (int y = 0; y < yMax; y++)
+                {
+
+                    if (rolls[y][x])
+                    {
+                        int ContainsRoll(int x, int y)
+                        {
+                            if (x < 0 || y < 0 || x >= xMax || y >= yMax)
+                            {
+                                return 0;
+                            }
+
+                            return rolls[y][x] ? 1 : 0;
+                        }
+
+                        int count = 0;
+                        count += ContainsRoll(x - 1, y - 1);
+                        count += ContainsRoll(x - 1, y);
+                        count += ContainsRoll(x - 1, y + 1);
+                        count += ContainsRoll(x, y - 1);
+                        count += ContainsRoll(x, y + 1);
+                        count += ContainsRoll(x + 1, y - 1);
+                        count += ContainsRoll(x + 1, y);
+                        count += ContainsRoll(x + 1, y + 1);
+                        if (count < 4)
+                        {
+                            toRemove.Add((x, y));
+                            result++;
+                        }
+                    }
+                }
+            }
+            foreach (var r in toRemove)
+            {
+                rolls[r.Item2][r.Item1] = false;
+                totalRemoved++;
+            }
+        } while (totalRemoved > 0);
+
 
         System.Console.WriteLine($"Result {inputFile} is {result}");
     }

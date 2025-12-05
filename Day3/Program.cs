@@ -18,52 +18,7 @@ class Program
 
     static void RunPart1(string inputFile)
     {
-        var lines = System.IO.File.ReadAllLines(inputFile);
-        if (!lines.Any())
-        {
-            return;
-        }
-
-        int result = 0;
-
-        foreach (var line in lines)
-        {
-            int bestFirst = 0;
-            int bestIndex = 0;
-            for (int i = 0; i < line.Length - 1; i++)
-            {
-                int thisI = line[i] - '0';
-                if (thisI > bestFirst)
-                {
-                    bestFirst = thisI;
-                    bestIndex = i;
-                }
-
-                if (bestFirst == 9)
-                {
-                    break;
-                }
-            }
-
-            int bestSecond = 0;
-            for (int i = bestIndex + 1; i < line.Length; i++)
-            {
-                int thisI = line[i] - '0';
-                if (thisI > bestSecond)
-                {
-                    bestSecond = thisI;
-                }
-
-                if (bestSecond == 9)
-                {
-                    break;
-                }
-            }
-
-            result = result + bestFirst * 10 + bestSecond;
-        }
-
-        System.Console.WriteLine($"Result {inputFile} is {result}");
+     
     }
 
     static void RunPart2(string inputFile)
