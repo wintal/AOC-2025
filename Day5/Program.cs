@@ -18,103 +18,125 @@ class Program
         int result = 0;
         
         var lines = System.IO.File.ReadAllLines(inputFile);
-        List<(int, int)> rules = new();
+        List<(long, long)> rules = new();
+        List<long> values = new();
         foreach (var line in lines)
         {
-            var parts = line.Split("|", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            var parts = line.Split("-", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 2)
             {
-                rules.Add((int.Parse(parts[0]), int.Parse(parts[1])));
+                rules.Add((long.Parse(parts[0]), long.Parse(parts[1])));
                 continue;
             }
-            
-            var parts2 = line.Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
-
-            if (parts2.Any())
+            else if (!string.IsNullOrEmpty(line))
             {
-                bool good = true;
+                long value = long.Parse(line);
+                values.Add(value);
                 foreach (var rule in rules)
                 {
-                    var firstIndex = parts2.IndexOf(rule.Item1);
-                    var secondIndex = parts2.IndexOf(rule.Item2);
-                    if (firstIndex != -1 && secondIndex != -1)
+                    if (value >= rule.Item1 && value <= rule.Item2)
                     {
-                        if (firstIndex > secondIndex)
-                        {
-                            good = false;
-                        }
+                        result++;
+                        break;
                     }
-
-                }
-
-                if (good)
-                {
-                    result += parts2[parts2.Count / 2];
                 }
             }
+
+
         }
 
         System.Console.WriteLine($"Result {inputFile} is {result}");
     }
 
+    public record struct Range(long MinInclusive, long MaxInclusive)
+    {
+        public bool Valid()
+        {
+            return MaxInclusive >= MinInclusive;
+        }
+    
+        public (Range below, Range above) Split(int boundary)
+        {
+
+            if (boundary <= MinInclusive)
+            {
+                return ( new Range(0, -1), this);
+            } 
+            else if (boundary >= MaxInclusive)
+            {
+                return (this,  new Range(0, -1) );
+            }
+            return (new Range(MinInclusive, boundary), new Range(boundary, MaxInclusive));
+        }
+
+        public (bool, Range) Combine(Range range)
+        {
+            if (range.MinInclusive > MaxInclusive)
+            {
+                return (false, new Range(0,0));
+            }
+
+            if (range.MaxInclusive < MinInclusive)
+            {
+                return (false, new Range(0,0));
+            }
+
+            return (true,
+                new Range(Math.Min(MinInclusive, range.MinInclusive), Math.Max(MaxInclusive, range.MaxInclusive)));
+        }
+        
+        public bool InRange(int testValue)
+        {
+            if (testValue < MinInclusive || testValue > MaxInclusive) return false;
+            return true;
+        }
+    }
+    
     static void RunPart2(string inputFile)
     {
-        int result = 0;
+        long result = 0;
         
         var lines = System.IO.File.ReadAllLines(inputFile);
-        List<(int, int)> rules = new();
+        List<Range> rules = new();
+        List<long> values = new();
         foreach (var line in lines)
         {
-            var parts = line.Split("|", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            var parts = line.Split("-", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 2)
             {
-                rules.Add((int.Parse(parts[0]), int.Parse(parts[1])));
-                continue;
-            }
-            
-            var parts2 = line.Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
-
-            if (parts2.Any())
-            {
-                bool good = true;
-                
-                foreach (var rule in rules)
+                Range thisRange = new Range(long.Parse(parts[0]), long.Parse(parts[1]));
+                bool combined = false;
+                do
                 {
-                    var firstIndex = parts2.IndexOf(rule.Item1);
-                    var secondIndex = parts2.IndexOf(rule.Item2);
-                    if (firstIndex != -1 && secondIndex != -1)
+                    combined = false;
+                    List<int> toRemove = new List<int>();
+                    for (int i = 0; i < rules.Count; i++)
                     {
-                        if (firstIndex > secondIndex)
+                        (combined, var newRange) = thisRange.Combine(rules[i]);
+                        if (combined)
                         {
-                            good = false;
-                          
+                            thisRange = newRange;
+                            toRemove.Add(i);
                         }
                     }
 
-                }
-
-                if (!good)
-                {
-                    parts2.Sort((i, i1) =>
+                    toRemove.Reverse();
+                    foreach (var i in toRemove)
                     {
-                        foreach (var rule in rules)
-                        {
-                            if (rule.Item1 == i && rule.Item2 == i1)
-                            {
-                                return 1;
-                            }
-                            else if (rule.Item1 == i1 && rule.Item2 == i)
-                            {
-                                return -1;
-                            }
+                        rules.RemoveAt(i);
+                    }
+                } while (combined);
 
-                        }
-                        return 0;
-                    });
-                    result += parts2[parts2.Count / 2];
-                }
+                rules.Add(thisRange);
             }
+
         }
+
+        foreach (var range in rules)
+        {
+            result += range.MaxInclusive - range.MinInclusive + 1;
+        }
+
 
         System.Console.WriteLine($"Result {inputFile} is {result}");
     }

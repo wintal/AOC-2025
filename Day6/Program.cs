@@ -1,4 +1,5 @@
 ﻿using Utilities;
+using Range = System.Range;
 
 namespace Day6;
 
@@ -17,136 +18,128 @@ class Program
 
     static void RunPart1(string inputFile)
     {
-        int result = 0;
+        long result = 0;
 
         var lines = System.IO.File.ReadAllLines(inputFile);
-  
-        Map map = Map.LoadFromLines(lines);
-        Vector start = map.FindEntry('^');
-        map[start] = '.';
 
-        FindPath(map, start, new Vector(0, -1));
-        foreach (var line in map.Rows)
+        List<List<long>> values = new List<List<long>>();
+
+      
+
+        for (int line = 0; line < lines.Length - 1; line++)
         {
-            result += line.Count(x => x == 'v');
+            var numbers = lines[line]
+                .Split(" ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            values.Add(numbers.Select(long.Parse).ToList());
         }
 
-        System.Console.WriteLine($"Result {inputFile} is {result}");
-    }
+        var operands = lines[lines.Length - 1]
+            .Split(" ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
-    private static void FindPath(Map map, Vector start, Vector direction)   
-    {
-        Vector location = start;
-        do
+
+        long[] results = new long[values[0].Count];
+
+        for (int i = 0; i < operands.Length; i++)
         {
-            if (!location.InsideBox(0, 0, map.MaxX, map.MaxY))
-            {
-                return;
-                
-            }
-            map[location] = 'v';
-
-            
-            var newLocation = location + direction;
-
-            if (!newLocation.InsideBox(0, 0, map.MaxX, map.MaxY))
-            {
-                return;
-            }
-
-            switch (map[newLocation])
-            {
-                case '.':
-                case 'v':
-                    location = newLocation;
-                    break;
-                default:
+            var operand = operands[i];
+                switch (operand)
                 {
-                    direction = direction.RotateRight90();
+                    case "*":
+                        results[i] = 1;
+                        break;
+                    case "+":
+                        results[i] = 0;
+                        break;
                 }
-                    break;
+        }
+
+        foreach (var line in values)
+        {
+            for (int i = 0; i < line.Count; i++)
+            {
+                var operand = operands[i];
+                switch (operand)
+                {
+                    case "*":
+                        results[i] *= line[i];
+                        break;
+                    case "+":
+                        results[i] += line[i];
+                        break;
+                }
             }
-        } while (true);
+        }
+       
+        
+
+        System.Console.WriteLine($"Result {inputFile} is {results.Sum()}");
     }
 
-    
     static void RunPart2(string inputFile)
     {
-        int result = 0;
+        long result = 0;
 
-    
         var lines = System.IO.File.ReadAllLines(inputFile);
-  
-        Map map = Map.LoadFromLines(lines);
-        Vector start = map.FindEntry('^');
-        map[start] = '.';
 
-        FindPath(map, start, new Vector(0, -1));
-        
-        List<Vector> obstacles = new List<Vector>();
-        for (int y = 0; y < map.MaxY; y++)
+
+
+        int width = lines[0].Length;
+        var operand = lines[lines.Length - 1][0];
+        for (int i = 0; i < width; )
         {
-            for (int x = 0; x < map.MaxX; x++)
+            List<long> numbers = new();
+            var empty = false;
+            while (!empty && i < width)
             {
-                if (map[new Vector(x,y)] == 'v') obstacles.Add(new Vector(x, y));
+                empty = true;
+                long number = 0;
+                for (int j = 0; j < lines.Length - 1; j++)
+                {
+                    if (lines[j][i] != ' ')
+                    {
+                        number = number * 10 + lines[j][i] - '0';
+                        empty = false;
+                    }
+                }
+
+                if (!empty ||  i == width -1)
+                {
+                    numbers.Add(number);
+                }
+
+                if (empty || i == width - 1)
+                {
+                    switch (operand)
+                    {
+                        case '*':
+                            long thisVal = 1;
+                            foreach (var thisNumber in numbers)
+                            {
+                                thisVal *= thisNumber;
+                            }
+
+                            result += thisVal;
+                            break;
+                        case '+':
+                            result += numbers.Sum();
+                            break;
+                    }
+
+                    if (i < width - 1)
+                    {
+                        operand = lines[lines.Length - 1][i + 1];
+                    }
+
+                }
+
+                i++;
             }
+           
             
         }
-        foreach (var obstacle in obstacles)
-        {
-            var mapCopy = map.Clone();
-            mapCopy[obstacle] = '#';
-            if (FindLoops(mapCopy, start, new Vector(0, -1)))
-            {
-                result++;
-            }
-        }
-
-        System.Console.WriteLine($"Result {inputFile} is {result}");
+        
+       System.Console.WriteLine($"Result {inputFile} is {result}");
     }
     
-    private static bool FindLoops(Map map, Vector start, Vector direction)
-    {
-        int loops = 0;
-        Vector location = start;
-        HashSet<(Vector location, Vector direction)> visited = new HashSet<(Vector location, Vector direction)>();
-        do
-        {
-            if (!location.InsideBox(0, 0, map.MaxX, map.MaxY))
-            {
-                return false;
-            }
-
-            if (visited.Contains((location, direction)))
-            {
-                return true;
-            }
-            visited.Add((location, direction));
-            map[location] = 'v';
-
-            var newLocation = location + direction;
-
-
-            if (!newLocation.InsideBox(0, 0, map.MaxX, map.MaxY))
-            {
-                return false;
-            }
-
-            switch (map[newLocation])
-            {
-                case '.':
-                case 'v':
-                    // visited this before, check if we can loop;
-                    location = newLocation;
-                    break;
-                default:
-                {
-                    direction = direction.RotateRight90();
-                }
-                    break;
-            }
-        } while (true);
-    }
-
   
 }

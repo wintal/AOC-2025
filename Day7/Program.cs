@@ -21,22 +21,43 @@ class Program
 
         var lines = System.IO.File.ReadAllLines(inputFile);
 
-        List<(long, long[])> equations = new();
-        foreach (var line in lines)
-        {
-            var parts = line.Split(":", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries);
-            var parts2 = parts[1].Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries);
-            equations.Add((long.Parse(parts[0]), parts2.Select(long.Parse).ToArray()));
-        }
+        var map = Utilities.Map<char>.LoadFromLines(lines, (c) => c);
+        var start = map.FindEntry('S');
 
-        foreach (var equation in equations)
+        var downVectors = new HashSet<Vector>();
+        downVectors.Add(start);
+        int y = 0;
+        int split = 0;
+        while (y < map.MaxY)
         {
-            if (FindSolutions(equation.Item1, equation.Item2[0], equation.Item2[1..])  > 0)
+            HashSet<Vector> newVec = new();
+            foreach (var downVector in downVectors)
             {
-                result += equation.Item1;
+                var vec = new Vector(downVector.X, y);
+                if (map[vec] == '^')
+                {
+                    split++;
+                    if (vec.X > 0)
+                    {
+                        newVec.Add(new Vector(vec.X - 1, vec.Y));
+                    }
+
+                    if (vec.X < map.MaxX)
+                    {
+                        newVec.Add(new Vector(vec.X + 1, vec.Y));
+                    }
+                }
+                else
+                {
+                    newVec.Add(vec);
+                }
             }
+
+            downVectors = newVec;
+            y++;
         }
-        System.Console.WriteLine($"Result {inputFile} is {result}");
+        
+        System.Console.WriteLine($"Result {inputFile} is {split}");
     }
 
 
@@ -106,21 +127,70 @@ class Program
 
         var lines = System.IO.File.ReadAllLines(inputFile);
 
-        List<(long, long[])> equations = new();
-        foreach (var line in lines)
-        {
-            var parts = line.Split(":", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries);
-            var parts2 = parts[1].Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries);
-            equations.Add((long.Parse(parts[0]), parts2.Select(long.Parse).ToArray()));
-        }
+        var map = Utilities.Map<char>.LoadFromLines(lines, (c) => c);
+        var start = map.FindEntry('S');
 
-        foreach (var equation in equations)
+        var downVectors = new Dictionary<Vector,long>();
+        downVectors.Add(start, 1);
+        int y = 0;
+        int split = 0;
+        while (y < map.MaxY)
         {
-            if (FindSolutionsConcat(equation.Item1, equation.Item2[0], equation.Item2[1..])  > 0)
+            Dictionary<Vector,long> newVec = new();
+            foreach (var downVector in downVectors)
             {
-                result += equation.Item1;
+                var pos = downVector.Key;
+                var count = downVector.Value;
+                var vec = new Vector(pos.X, y);
+                if (map[vec] == '^')
+                {
+                    split++;
+                    if (vec.X > 0)
+                    {
+                        var thisPos = new Vector(vec.X - 1, vec.Y);
+                        if (newVec.ContainsKey(thisPos))
+                        {
+                            newVec[thisPos] += count ;
+                        }
+                        else
+                        {
+
+                            newVec[thisPos] = count ;;
+                        }
+                    }
+
+                    if (vec.X < map.MaxX)
+                    {
+                        var thisPos = new Vector(vec.X + 1, vec.Y);
+                        if (newVec.ContainsKey(thisPos))
+                        {
+                            newVec[thisPos] += count ;
+                        }
+                        else
+                        {
+
+                            newVec[thisPos] = count;;
+                        }
+                    }
+                }
+                else
+                {
+                    if (newVec.ContainsKey(vec))
+                    {
+                        newVec[vec] += count ;
+                    }
+                    else
+                    {
+
+                        newVec[vec] = count;;
+                    }
+                }
             }
+
+            downVectors = newVec;
+            y++;
         }
-        System.Console.WriteLine($"Result {inputFile} is {result}");
+        
+        System.Console.WriteLine($"Result {inputFile} is {downVectors.Values.Sum()}");
     }
 }

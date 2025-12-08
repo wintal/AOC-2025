@@ -4,7 +4,7 @@ param (
     [Parameter(Mandatory=$true)]
     [string]$Day,
     [Parameter(Mandatory=$false)]
-    [string]$SessionStr = "53616c7465645f5f869dbc0a33651b5adcb5a0f6ffdb19eca6f05d9002343ab1d7064282b03c3c339c3f78b1cdb2148bc0613cece6098d211a8686c348add53a"
+    [string]$SessionStr = "53616c7465645f5f3dc549a03976656a780e57e456bf06d83cf804adbe20f6f9c0ad03d7ac0a89b3ca78eb8ccbc40d9991397ef79fbd8da203dcb2d1d8aab0e9"
 )
 
 
