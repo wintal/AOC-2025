@@ -1,4 +1,5 @@
 ﻿using Utilities;
+using Range = System.Range;
 
 namespace Day1;
 
@@ -22,145 +23,145 @@ class Program
         long result = 0;
 
         var start = DateTime.Now;
-        var lines = System.IO.File.ReadAllLines(inputFile).First().ToCharArray();
+        var lines = System.IO.File.ReadAllLines(inputFile);
 
-        List<int> array = new List<int>();
+        List<Vector> array = new List<Vector>();
 
         int fileIndex = 0;
         bool isFile = true;
-        foreach (var character in lines)
+        foreach (var line in lines)
         {
-            var number = int.Parse(character.ToString());
-            for (int i = 0; i < number; i++)
-            {
-                if (isFile)
-                {
-                    array.Add(fileIndex);
-                }
-                else
-                {
-                    array.Add(-1);
-                }
-            }
-
-            if (isFile) fileIndex++;
-            isFile = !isFile;
+            var parts = line.Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            array.Add(new Vector(int.Parse(parts[0]), int.Parse(parts[1])));
         }
 
-        int startIndex = 0;
-        int endIndex = array.Count - 1;
-
-        while (endIndex > startIndex)
-        {
-            while (array[endIndex] == -1)
-            {
-                endIndex--;
-            }
-
-            while (array[startIndex] != -1)
-            {
-                startIndex++;
-            }
-
-            if (startIndex < endIndex)
-            {
-                array[startIndex] = array[endIndex];
-                array[endIndex] = -1;
-            }
-
-            startIndex++;
-            endIndex--;
-        }
-
-        startIndex = 0;
-        result = 0;
+        long max = 0;
         for (int i = 0; i < array.Count; i++)
         {
-            if (array[i] != -1)
+            for (int j = 1 + 1; j < array.Count; j++)
             {
-                result = result + (long)startIndex * (long)array[startIndex];
-                startIndex++;
+                var left = array[i] - array[j];
+                var size = (left.X + 1) * (left.Y + 1);
+                if (size > max) max = size;
             }
         }
 
-        System.Console.WriteLine($"Result {inputFile} is {result} in {(DateTime.Now - start).TotalSeconds} seconds");
+        System.Console.WriteLine($"Result {inputFile} is {max}");
+    }
+
+    static bool RectangleIntersectHoriz(int minX, int maxX, int minY, int maxY, int left, int right, int y)
+    {
+        if (maxX <= left) return false;
+        if (minX >= right) return false;
+        if (y <= minY || y >= maxY) return false;
+        if (left <= maxX && right >= maxX) return true;
+        if (left <= minX && right >= minX) return true;
+
+        if (left > minX && right < maxX) return true;
+        if (left <= maxX && left >= minX) return true;
+        if (right <= maxX && right >= minX) return true;
+        return false;
+    }
+
+    static bool RectangleIntersectVert(int minX, int maxX, int minY, int maxY, int bottom, int top, int x)
+    {
+        if (maxY <= bottom) return false;
+        if (minY >= top) return false;
+        if (x <= minX || x >= maxX) return false;
+        if (bottom <= maxY && top >= maxY) return true;
+        if (bottom <= minY && top >= minY) return true;
+        if (bottom > minY && top < maxY) return true;
+        if (bottom <= maxY && bottom >= minY) return true;
+        if (top <= maxY && top >= minY) return true;
+        return false;
+    }
+
+    public static bool Intersects(int minX, int maxX, int minY, int maxY, Vector start, Vector end)
+    {
+        var segMinX = Math.Min(start.X, end.X);
+        var segMaxX = Math.Max(start.X, end.X);
+        var segMinY = Math.Min(start.Y, end.Y);
+        var segMaxY = Math.Max(start.Y, end.Y);
+
+        return segMaxX > minX && segMinX < maxX && segMaxY > minY && segMinY < maxY;
     }
 
     static void RunPart2(string inputFile)
     {
         long result = 0;
+
+
         var start = DateTime.Now;
+        var lines = System.IO.File.ReadAllLines(inputFile);
 
-        var lines = System.IO.File.ReadAllLines(inputFile).First().ToCharArray();
+        List<Vector> array = new List<Vector>();
 
-        List<(int numberBlocks, int fileId)> blocks = new();
-
+        List<(Vector, Vector)> segments = new();
         int fileIndex = 0;
         bool isFile = true;
-        foreach (var character in lines)
+        foreach (var line in lines)
         {
-            var number = int.Parse(character.ToString());
-            if (isFile)
+            var parts = line.Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            array.Add(new Vector(int.Parse(parts[0]), int.Parse(parts[1])));
+            if (array.Count > 1)
             {
-                blocks.Add((number, fileIndex));
+                segments.Add((array[array.Count - 2], array[array.Count - 1]));
             }
-            else
-            {
-                blocks.Add((number, -1));
-            }
-
-            if (isFile) fileIndex++;
-            isFile = !isFile;
         }
 
-        HashSet<int> process = new();
-        for (int i = blocks.Count - 1; i >= 0; i--)
+        segments.Add((array[^1], array[0]));
+
+
+        long max = 0;
+        for (int i = 0; i < array.Count - 1; i++)
         {
-            if (blocks[i].fileId == -1 || process.Contains(blocks[i].fileId))
+            for (int j = 1 + 1; j < array.Count; j++)
             {
-                continue;
-            }
-
-            process.Add(blocks[i].fileId);
-            var blockToMove = blocks[i];
-            for (int j = 0; j < blocks.Count; j++)
-            {
-                if (j > i) continue;
-                if (blocks[j].fileId != -1)
+                var topRight = array[i];
+                var bottomLeft = array[j];
+                var top = (int)Math.Max(topRight.Y, bottomLeft.Y);
+                var bottom = (int)Math.Min(topRight.Y, bottomLeft.Y);
+                var left = (int)Math.Min(topRight.X, bottomLeft.X);
+                var right = (int)Math.Max(topRight.X, bottomLeft.X);
+                var diag = array[i] - array[j];
+                var size = (Math.Abs(diag.X) + 1) * (Math.Abs(diag.Y) + 1);
+                if (size < max) continue;
+                bool intersects = false;
+                for (int seg = 0; seg < segments.Count; seg++)
                 {
-                    continue;
-                }
-
-                if (blocks[j].numberBlocks >= blocks[i].numberBlocks)
-                {
-                    var jcontent = blocks[j];
-                    int diff = jcontent.numberBlocks - blockToMove.numberBlocks;
-                    blocks[j] = (blockToMove.numberBlocks, blockToMove.fileId);
-                    blocks[i] = (blockToMove.numberBlocks, -1);
-                    if (diff > 0)
+                    var segment = segments[seg];
+                    var segmentA = segment.Item1;
+                    var segmentB = segment.Item2;
+                    if (segmentA.X != segmentB.X)
                     {
-                        blocks.Insert(j + 1, (diff, -1));
+                        // horizontal line, check if any of our up down lines intersect it
+                        if (RectangleIntersectHoriz(left, right, bottom, top, (int)Math.Min(segmentA.X, segmentB.X), (int)Math.Max(segmentA.X, segmentB.X),
+                                (int)segmentA.Y))
+                        {
+                            intersects = true;
+                        }
+                    }
+                    else
+                    {
+                        // vertical line
+                        // doesn't have zero width or end on the line
+                        if (RectangleIntersectVert(left, right, bottom, top, (int)Math.Min(segmentA.Y, segmentB.Y), (int)Math.Max(segmentA.Y, segmentB.Y),
+                                (int)segmentA.X))
+                        {
+                            intersects = true;
+                        }
                     }
 
-                    break;
+                    if (intersects) break;
                 }
-            }
-        }
 
-        int index = 0;
-        for (int i = 0; i < blocks.Count; i++)
-        {
-            for (int j = 0; j < blocks[i].numberBlocks; j++)
-            {
-                if (blocks[i].fileId != -1)
+                if (!intersects)
                 {
-                    result += index * blocks[i].fileId;
+                    if (size > max) max = size;
                 }
-
-                index++;
             }
         }
 
-        System.Console.WriteLine($"Result {inputFile} is {result} in {(DateTime.Now - start).TotalSeconds} seconds");
+        System.Console.WriteLine($"Result {inputFile} is {max}");
     }
 }
